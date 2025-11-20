@@ -103,6 +103,40 @@ export const searchJobsWithAI = async (prompt: string): Promise<any[]> => {
   }
 };
 
+export const generateChatResponse = async (
+  history: { sender: string; text: string }[],
+  candidateName: string,
+  jobTitle: string
+): Promise<string> => {
+  if (!ai) {
+     // Mock response if no API key
+     return `(Mock AI): Hi ${candidateName}, thanks for your interest in the ${jobTitle} role. Tell me about your experience.`;
+  }
+
+  try {
+    const systemInstruction = `You are a professional AI Recruiter screening ${candidateName} for the position of ${jobTitle}.
+    Be polite, professional, and concise. Ask relevant screening questions based on the context.
+    Do not be repetitive. Keep answers under 50 words.`;
+
+    const conversation = history.map(h => `${h.sender === 'bot' ? 'AI' : 'Candidate'}: ${h.text}`).join('\n');
+    const prompt = `${conversation}\nAI:`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction,
+        maxOutputTokens: 150,
+      }
+    });
+
+    return response.text || "I didn't quite catch that, could you rephrase?";
+  } catch (error) {
+    console.error("Gemini Chat Error:", error);
+    return "I'm having trouble connecting right now. Let's continue later.";
+  }
+};
+
 const mockParseResume = () => ({
   fullName: "John Doe",
   email: "john.doe@example.com",

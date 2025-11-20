@@ -184,7 +184,7 @@ export interface Candidate {
   profilePhoto?: string;
   linkedinUrl?: string;
   portfolioUrl?: string; // Projects / Profile link
-  resumeUrl: string;
+  resumeUrl?: string;
   resumeLastUpdated: string;
   isActivelySearching: boolean;
 

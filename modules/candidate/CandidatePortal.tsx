@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { JobApplication, JobPost, User, Candidate, WorkExperience } from '../../types';
-import { Briefcase, FileText, CheckCircle, Clock, MapPin, Search, User as UserIcon, Bell, ChevronRight, Upload, Plus, Trash2, Save, Sparkles, Loader2, Edit } from 'lucide-react';
+import { StorageService } from '../../services/storageService';
+import { Briefcase, FileText, CheckCircle, Clock, MapPin, Search, User as UserIcon, Bell, ChevronRight, Upload, Plus, Trash2, Save, Sparkles, Loader2, Edit, DollarSign } from 'lucide-react';
 import { parseResumeAI } from '../../services/geminiService';
 import { useToast } from '../ui/ToastContext';
 
-// Mock Data
+// Mock Data (Seed for profile only)
 const MOCK_CANDIDATE_PROFILE: Candidate = {
   id: 'cand-1',
   fullName: 'Amit Sharma',
@@ -92,33 +93,19 @@ const MY_APPLICATIONS: JobApplication[] = [
   { id: 'app-2', jobId: 'job-2', jobTitle: 'Frontend Engineer', clientName: 'StartUp Z', appliedDate: '28 Sep 2023', status: 'Screening', lastUpdate: 'Profile under review by recruiter' },
 ];
 
-const RECOMMENDED_JOBS: Partial<JobPost>[] = [
-  { 
-    id: 'job-4', 
-    title: 'Full Stack Lead', 
-    clientName: 'Enterpise Corp', 
-    jobLocations: ['Remote'], 
-    minSalary: 3500000, 
-    maxSalary: 4500000,
-    currency: 'INR' 
-  },
-  { 
-    id: 'job-5', 
-    title: 'Product Designer', 
-    clientName: 'DesignFirst', 
-    jobLocations: ['Bangalore'], 
-    minSalary: 1800000, 
-    maxSalary: 2500000,
-    currency: 'INR' 
-  },
-];
-
 export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
   const [view, setView] = useState<'dashboard' | 'profile' | 'jobs'>('dashboard');
   const [profile, setProfile] = useState<Candidate>(MOCK_CANDIDATE_PROFILE);
   const [isParsing, setIsParsing] = useState(false);
+  const [availableJobs, setAvailableJobs] = useState<JobPost[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
+
+  useEffect(() => {
+    // Load jobs from Storage
+    const jobs = StorageService.getJobs().filter(j => j.status === 'Sourcing' || j.status === 'WIP');
+    setAvailableJobs(jobs);
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -144,7 +131,6 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
         expectedCtc: parsedData.expectedCtc || prev.expectedCtc,
         resumeUrl: file.name,
         resumeLastUpdated: 'Just now',
-        // We could also auto-generate the summary here if needed
       }));
 
       addToast('Resume parsed successfully!', 'success');
@@ -160,6 +146,11 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
 
   const triggerFileUpload = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleApply = (job: JobPost) => {
+     addToast(`Applied to ${job.title} successfully!`, 'success');
+     // In a real app, this would create an application record in StorageService
   };
 
   // --- Helper Components ---
@@ -202,6 +193,59 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
   const handleSaveProfile = () => {
     addToast('Profile details saved successfully!', 'success');
   };
+
+  const renderJobs = () => (
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in">
+       <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
+          <h2 className="text-2xl font-bold text-slate-900">Open Positions</h2>
+          <p className="text-slate-500">Explore and apply to opportunities matching your profile.</p>
+       </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {availableJobs.length > 0 ? availableJobs.map(job => (
+             <div key={job.id} className="bg-white p-6 rounded-xl border border-slate-200 hover:shadow-lg hover:border-blue-300 transition-all group">
+                <div className="flex justify-between items-start mb-4">
+                   <div>
+                      <h3 className="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">{job.title}</h3>
+                      <p className="text-slate-500 font-medium">{job.clientName}</p>
+                   </div>
+                   <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-1 rounded">{job.employmentType}</span>
+                </div>
+                
+                <div className="space-y-2 mb-6">
+                   <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <MapPin size={16} className="text-slate-400"/> {job.jobLocations.join(', ')}
+                   </div>
+                   <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <DollarSign size={16} className="text-slate-400"/> {job.minSalary ? `${job.minSalary/100000} - ${job.maxSalary!/100000} LPA` : 'Competitive'}
+                   </div>
+                   <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Briefcase size={16} className="text-slate-400"/> {job.experienceRequired} Experience
+                   </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-6">
+                   {job.requiredSkills.slice(0, 3).map(skill => (
+                      <span key={skill} className="text-xs bg-slate-50 border border-slate-100 px-2 py-1 rounded text-slate-600">{skill}</span>
+                   ))}
+                </div>
+
+                <button 
+                  onClick={() => handleApply(job)}
+                  className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                   Apply Now <ChevronRight size={16} />
+                </button>
+             </div>
+          )) : (
+             <div className="col-span-full text-center py-10 text-slate-400">
+                <Search size={32} className="mx-auto mb-3 opacity-50"/>
+                No jobs currently available. Check back later.
+             </div>
+          )}
+       </div>
+    </div>
+  );
 
   const renderDashboard = () => (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -248,13 +292,19 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-slate-800">Recommended for You</h2>
           <div className="space-y-4">
-             {RECOMMENDED_JOBS.map(job => (
+             {availableJobs.slice(0, 2).map(job => (
                <div key={job.id} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-blue-300 transition-colors cursor-pointer">
                   <h3 className="font-bold text-slate-800">{job.title}</h3>
                   <p className="text-sm text-slate-500 mb-2">{job.clientName}</p>
-                  <button className="w-full py-2 rounded-lg border border-blue-600 text-blue-600 text-sm font-medium hover:bg-blue-50">View & Apply</button>
+                  <button 
+                    onClick={() => handleApply(job)}
+                    className="w-full py-2 rounded-lg border border-blue-600 text-blue-600 text-sm font-medium hover:bg-blue-50"
+                  >
+                    View & Apply
+                  </button>
                </div>
              ))}
+             {availableJobs.length === 0 && <p className="text-slate-400 text-sm">No recommendations available yet.</p>}
           </div>
         </div>
       </div>
@@ -769,15 +819,7 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {view === 'dashboard' && renderDashboard()}
         {view === 'profile' && renderProfile()}
-        {view === 'jobs' && (
-          <div className="text-center py-20">
-             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                <Search size={32} />
-             </div>
-             <h3 className="text-xl font-bold text-slate-900">Job Search</h3>
-             <p className="text-slate-500 mt-2">Browse and apply to open positions. (Coming Soon)</p>
-          </div>
-        )}
+        {view === 'jobs' && renderJobs()}
       </main>
     </div>
   );

@@ -1,55 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Briefcase, LogIn, Zap, ExternalLink, Loader2, FileText, DollarSign, ChevronRight, X, UploadCloud, CheckCircle, Clock, List } from 'lucide-react';
 import { PublicJob, PublicJobService } from '../../services/publicJobService';
+import { StorageService } from '../../services/storageService';
 import { useToast } from '../ui/ToastContext';
+import { JobPost, Candidate } from '../../types';
 
 interface PublicJobBoardProps {
   onSignInClick: () => void;
   onViewArchitecture: () => void;
 }
 
-// Mock Data for Internal "Featured" Jobs
-const FEATURED_JOBS = [
-  {
-    id: 'feat-1',
-    title: 'Senior Product Designer',
-    company: 'Creative Studio',
-    location: 'Remote',
-    type: 'Full-time',
-    salary: '₹25L - ₹35L',
-    tags: ['Figma', 'UI/UX'],
-    posted: '2 days ago',
-    description: 'We are seeking a visionary Senior Product Designer to lead our core product experience. You will work closely with engineering and product teams to deliver intuitive, user-centric designs.',
-    requirements: ['5+ years of experience in Product Design', 'Expertise in Figma and prototyping tools', 'Strong portfolio showcasing complex web apps', 'Experience with design systems']
-  },
-  {
-    id: 'feat-2',
-    title: 'Backend Tech Lead',
-    company: 'FinTech Global',
-    location: 'Bangalore',
-    type: 'Full-time',
-    salary: '₹45L - ₹60L',
-    tags: ['Node.js', 'AWS'],
-    posted: '1 day ago',
-    description: 'Join a high-growth FinTech startup as a Backend Tech Lead. You will be responsible for architecting scalable microservices and leading a team of 5 engineers.',
-    requirements: ['8+ years of backend development experience', 'Strong proficiency in Node.js and TypeScript', 'Deep understanding of AWS services (Lambda, DynamoDB)', 'Experience in leading agile teams']
-  },
-  {
-    id: 'feat-3',
-    title: 'Marketing Manager',
-    company: 'GrowthX',
-    location: 'Mumbai (Hybrid)',
-    type: 'Full-time',
-    salary: '₹18L - ₹25L',
-    tags: ['Marketing', 'B2B'],
-    posted: '3 days ago',
-    description: 'We are looking for a data-driven Marketing Manager to drive B2B lead generation strategies. You will oversee content marketing, paid campaigns, and event marketing.',
-    requirements: ['4+ years in B2B Marketing', 'Proven track record in lead generation', 'Experience with HubSpot or Salesforce', 'Strong analytical and communication skills']
-  }
-];
+// Helper to create a basic candidate object from form data
+const createCandidateFromApplication = (formData: any, jobId: string): Candidate => {
+  return {
+    id: `cand-${Date.now()}`,
+    jobId: jobId,
+    fullName: formData.fullName,
+    email: formData.email,
+    phone: formData.phone,
+    resumeUrl: formData.resume ? formData.resume.name : 'No Resume',
+    resumeLastUpdated: new Date().toISOString().split('T')[0],
+    isActivelySearching: true,
+    status: 'New',
+    automationStatus: 'New',
+    matchScore: Math.floor(Math.random() * 40) + 60, // Random mock score
+    aiSummary: 'Applied via Public Job Board. Waiting for review.',
+    // Defaults
+    highestEducation: '',
+    skills: [],
+    certificates: [],
+    totalExperience: 0,
+    currentRole: '',
+    expectedRole: '',
+    jobType: 'Full-time',
+    currentLocations: [],
+    preferredLocations: [],
+    readyToRelocate: 'No',
+    noticePeriod: 'Immediate',
+    currentCtc: '',
+    expectedCtc: '',
+    isCtcNegotiable: false,
+    currency: 'INR',
+    lookingForJobsAbroad: 'No',
+    sectorType: 'Private',
+    preferredIndustries: [],
+    gender: 'Male',
+    maritalStatus: 'Single',
+    languages: [],
+    willingnessToTravel: 'No',
+    drivingLicensePassport: false,
+    workHistory: [],
+    hasCurrentOffers: false,
+    preferredContactMode: 'Email'
+  };
+};
 
 interface ApplicationModalProps {
-  job: typeof FEATURED_JOBS[0];
+  job: JobPost;
   onClose: () => void;
 }
 
@@ -68,12 +75,15 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ job, onClose }) => 
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
+    // Create candidate record in "Database"
     setTimeout(() => {
+      const newCandidate = createCandidateFromApplication(formData, job.id);
+      StorageService.saveCandidate(newCandidate);
+      
       setIsSubmitting(false);
       setStep('SUCCESS');
       addToast('Application submitted successfully!', 'success');
-    }, 1500);
+    }, 1000);
   };
 
   if (step === 'SUCCESS') {
@@ -85,7 +95,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ job, onClose }) => 
            </div>
            <h3 className="text-2xl font-bold text-slate-900 mb-2">Application Sent!</h3>
            <p className="text-slate-500 mb-6">
-             Thanks for applying to <span className="font-bold text-slate-800">{job.company}</span>. We have received your resume and will get back to you shortly.
+             Thanks for applying to <span className="font-bold text-slate-800">{job.clientName}</span>. We have received your resume and will get back to you shortly.
            </p>
            <button 
              onClick={onClose}
@@ -104,7 +114,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ job, onClose }) => 
         <div className="p-5 border-b flex justify-between items-center bg-slate-50">
            <div>
              <h3 className="font-bold text-lg text-slate-900">Apply for {job.title}</h3>
-             <p className="text-sm text-slate-500">{job.company} • {job.location}</p>
+             <p className="text-sm text-slate-500">{job.clientName} • {job.jobLocations?.[0]}</p>
            </div>
            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
              <X size={20} />
@@ -190,7 +200,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ job, onClose }) => 
 };
 
 interface JobDetailsModalProps {
-  job: typeof FEATURED_JOBS[0];
+  job: JobPost;
   onClose: () => void;
   onApply: () => void;
 }
@@ -202,11 +212,11 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, onApply
         <div className="p-6 border-b flex justify-between items-start bg-slate-50 sticky top-0 z-10">
           <div>
              <h2 className="text-2xl font-bold text-slate-900">{job.title}</h2>
-             <p className="text-slate-500 font-medium mt-1">{job.company}</p>
+             <p className="text-slate-500 font-medium mt-1">{job.clientName}</p>
              <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
-                <div className="flex items-center gap-1"><MapPin size={14}/> {job.location}</div>
-                <div className="flex items-center gap-1"><DollarSign size={14}/> {job.salary}</div>
-                <div className="flex items-center gap-1"><Clock size={14}/> {job.type}</div>
+                <div className="flex items-center gap-1"><MapPin size={14}/> {job.jobLocations.join(', ')}</div>
+                <div className="flex items-center gap-1"><DollarSign size={14}/> {job.minSalary ? `${job.minSalary/100000}-${job.maxSalary!/100000} LPA` : 'Competitive'}</div>
+                <div className="flex items-center gap-1"><Clock size={14}/> {job.employmentType}</div>
              </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
@@ -217,7 +227,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, onApply
         <div className="p-8 overflow-y-auto space-y-8">
            <div>
               <h3 className="text-lg font-bold text-slate-800 mb-3">About the Role</h3>
-              <p className="text-slate-600 leading-relaxed">{job.description}</p>
+              <p className="text-slate-600 leading-relaxed">{job.jobSummary}</p>
            </div>
            
            <div>
@@ -225,19 +235,24 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, onApply
                 <List size={18} className="text-blue-600" /> Requirements
               </h3>
               <ul className="space-y-2">
-                 {job.requirements.map((req, i) => (
+                 {/* Combine required and preferred skills into a list for display */}
+                 {job.requiredSkills.concat(job.preferredSkills).map((req, i) => (
                     <li key={i} className="flex items-start gap-2 text-slate-600">
                        <span className="mt-2 w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0"></span>
                        <span>{req}</span>
                     </li>
                  ))}
+                 <li className="flex items-start gap-2 text-slate-600">
+                     <span className="mt-2 w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0"></span>
+                     <span>Experience: {job.experienceRequired}</span>
+                 </li>
               </ul>
            </div>
            
            <div>
               <h3 className="text-lg font-bold text-slate-800 mb-3">Tech Stack & Tags</h3>
               <div className="flex flex-wrap gap-2">
-                 {job.tags.map(tag => (
+                 {job.toolsTechStack.concat(job.requiredSkills).map(tag => (
                     <span key={tag} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">{tag}</span>
                  ))}
               </div>
@@ -267,18 +282,28 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
   const [loading, setLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   
-  const [viewingJob, setViewingJob] = useState<typeof FEATURED_JOBS[0] | null>(null);
-  const [applyingJob, setApplyingJob] = useState<typeof FEATURED_JOBS[0] | null>(null);
+  // Internal Featured Jobs from Storage
+  const [featuredJobs, setFeaturedJobs] = useState<JobPost[]>([]);
+  
+  const [viewingJob, setViewingJob] = useState<JobPost | null>(null);
+  const [applyingJob, setApplyingJob] = useState<JobPost | null>(null);
 
-  // Initial Load - Fetch Daily Hot Drops
+  // Initial Load - Fetch Daily Hot Drops & Featured Internal Jobs
   useEffect(() => {
-    const loadHotDrops = async () => {
+    const loadData = async () => {
       setLoading(true);
+      // 1. Hot Drops (External)
       const hotDrops = await PublicJobService.getDailyHotDrops();
       setJobs(hotDrops);
+      
+      // 2. Featured Jobs (Internal - Sourcing/WIP only)
+      const allJobs = StorageService.getJobs();
+      const sourcingJobs = allJobs.filter(j => j.status === 'Sourcing' || j.status === 'WIP');
+      setFeaturedJobs(sourcingJobs);
+      
       setLoading(false);
     };
-    loadHotDrops();
+    loadData();
   }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -360,7 +385,7 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
       </div>
 
       {/* Featured Opportunities (Internal Jobs) - Only show when not searching */}
-      {!search && !isSearching && (
+      {!search && !isSearching && featuredJobs.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 py-12 border-b border-slate-200 w-full">
           <div className="flex items-center gap-3 mb-8">
              <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-md">
@@ -373,7 +398,7 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             {FEATURED_JOBS.map((job) => (
+             {featuredJobs.slice(0, 6).map((job) => (
                 <div 
                   key={job.id} 
                   onClick={() => setViewingJob(job)}
@@ -382,27 +407,29 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
                    <div className="flex justify-between items-start mb-4">
                       <div>
                          <h3 className="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">{job.title}</h3>
-                         <p className="text-slate-500 font-medium">{job.company}</p>
+                         <p className="text-slate-500 font-medium">{job.clientName}</p>
                       </div>
                       <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Featured</span>
                    </div>
                    
                    <div className="space-y-3 mb-6 flex-1">
                       <div className="flex items-center gap-2 text-sm text-slate-600">
-                         <MapPin size={14} className="text-slate-400"/> {job.location}
+                         <MapPin size={14} className="text-slate-400"/> {job.jobLocations[0]}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-slate-600">
-                         <DollarSign size={14} className="text-slate-400"/> {job.salary}
+                         <DollarSign size={14} className="text-slate-400"/> {job.minSalary ? `${job.minSalary/100000}LPA+` : 'Competitive'}
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
-                         {job.tags.map(tag => (
+                         {job.requiredSkills.slice(0, 2).map(tag => (
                            <span key={tag} className="text-xs bg-slate-50 border border-slate-100 text-slate-600 px-2 py-1 rounded font-medium">{tag}</span>
                          ))}
                       </div>
                    </div>
                    
                    <div className="pt-4 border-t flex items-center justify-between">
-                      <span className="text-xs text-slate-400 font-medium">{job.posted}</span>
+                      <span className="text-xs text-slate-400 font-medium">
+                        {new Date(job.createdAt || Date.now()).toLocaleDateString()}
+                      </span>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setApplyingJob(job); }}
                         className="text-white bg-blue-600 px-4 py-1.5 rounded-lg font-bold text-sm hover:bg-blue-700 flex items-center gap-1 transition-colors shadow-sm z-10"
