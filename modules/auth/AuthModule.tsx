@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserRole, User } from '../../types';
 import { ShieldCheck, Users, Briefcase, UserCircle, User as UserIcon, ArrowLeft, Lock, Mail, Check } from 'lucide-react';
+import { useToast } from '../ui/ToastContext';
 
 interface AuthProps {
   onLogin: (user: User) => void;
@@ -13,6 +14,7 @@ export const AuthModule: React.FC<AuthProps> = ({ onLogin, onBack }) => {
   const [password, setPassword] = useState('');
   const [formMode, setFormMode] = useState<'LOGIN' | 'SIGNUP' | 'FORGOT'>('LOGIN');
   const [isLoading, setIsLoading] = useState(false);
+  const { addToast } = useToast();
 
   // Simulate Login Flow
   const handleAuthSubmit = (e: React.FormEvent) => {
@@ -32,6 +34,7 @@ export const AuthModule: React.FC<AuthProps> = ({ onLogin, onBack }) => {
         avatar: `https://picsum.photos/seed/${selectedRole}/200`
       };
       setIsLoading(false);
+      addToast(`Welcome back, ${mockUser.name}!`, 'success');
       onLogin(mockUser);
     }, 1500);
   };
@@ -50,6 +53,7 @@ export const AuthModule: React.FC<AuthProps> = ({ onLogin, onBack }) => {
         avatar: `https://picsum.photos/seed/${selectedRole}google/200`
       };
       setIsLoading(false);
+      addToast('Google Sign-In Successful', 'success');
       onLogin(mockUser);
     }, 2000);
   };
@@ -216,7 +220,7 @@ export const AuthModule: React.FC<AuthProps> = ({ onLogin, onBack }) => {
                  />
               </div>
               <button 
-                onClick={() => setFormMode('LOGIN')}
+                onClick={() => { setFormMode('LOGIN'); addToast('Reset link sent to your email!', 'info'); }}
                 className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all"
               >
                  Send Reset Link

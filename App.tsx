@@ -110,7 +110,7 @@ const App: React.FC = () => {
     };
 
     return (
-      <div className="flex min-h-screen bg-slate-50 font-sans">
+      <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
         {/* Sidebar */}
         <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-full z-10`}>
           <div className="h-16 flex items-center justify-center border-b border-slate-800 relative">

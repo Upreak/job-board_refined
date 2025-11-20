@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { 
   Plus, Trash2, Save, Users, Building, UserCheck, 
@@ -7,6 +6,7 @@ import {
   Search, ChevronRight, Edit, UploadCloud, FileText
 } from 'lucide-react';
 import { Client, ClientContact, Lead, LeadStatus, ActivityLog, CorporateDetails } from '../../types';
+import { useToast } from '../ui/ToastContext';
 
 // --- Mock Data ---
 
@@ -123,11 +123,13 @@ export const SalesCRM: React.FC = () => {
   const [formClient, setFormClient] = useState<Partial<Client>>({ name: '', address: '', assignedRecruiter: '' });
   const [formCorporate, setFormCorporate] = useState<CorporateDetails>({});
   const [formContacts, setFormContacts] = useState<ClientContact[]>([{ name: '', email: '', phone: '', position: '', department: '', isSpoc: true }]);
+  const { addToast } = useToast();
 
   // --- Lead Management Functions ---
 
   const moveLead = (id: string, newStatus: LeadStatus) => {
     setLeads(leads.map(l => l.id === id ? { ...l, status: newStatus } : l));
+    addToast(`Lead status changed to ${newStatus}`, 'success');
   };
 
   const isOverdue = (dateStr?: string) => {
@@ -153,6 +155,7 @@ export const SalesCRM: React.FC = () => {
       }
       return l;
     }));
+    addToast('Activity logged successfully', 'success');
   };
 
   const convertLeadToClient = (lead: Lead) => {
@@ -206,7 +209,7 @@ export const SalesCRM: React.FC = () => {
 
   const handleSaveClient = () => {
     if (!formClient.name || !formClient.address) {
-      alert("Client Name and Address are required.");
+      addToast("Client Name and Address are required.", 'error');
       return;
     }
 
@@ -222,8 +225,10 @@ export const SalesCRM: React.FC = () => {
 
     if (editingClientId) {
         setClients(clients.map(c => c.id === editingClientId ? newClientData : c));
+        addToast('Client updated successfully', 'success');
     } else {
         setClients([...clients, newClientData]);
+        addToast('New client created successfully', 'success');
     }
     
     // Reset and go back

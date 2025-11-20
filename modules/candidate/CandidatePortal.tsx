@@ -1,8 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { JobApplication, JobPost, User, Candidate, WorkExperience } from '../../types';
 import { Briefcase, FileText, CheckCircle, Clock, MapPin, Search, User as UserIcon, Bell, ChevronRight, Upload, Plus, Trash2, Save, Sparkles, Loader2, Edit } from 'lucide-react';
 import { parseResumeAI } from '../../services/geminiService';
+import { useToast } from '../ui/ToastContext';
 
 // Mock Data
 const MOCK_CANDIDATE_PROFILE: Candidate = {
@@ -118,6 +118,7 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
   const [profile, setProfile] = useState<Candidate>(MOCK_CANDIDATE_PROFILE);
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addToast } = useToast();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -146,9 +147,11 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
         // We could also auto-generate the summary here if needed
       }));
 
+      addToast('Resume parsed successfully!', 'success');
+
     } catch (error) {
       console.error("Failed to parse resume", error);
-      alert("Could not parse resume. Please try again.");
+      addToast("Could not parse resume. Please try again.", 'error');
     } finally {
       setIsParsing(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -194,6 +197,10 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
     const updated = [...profile.workHistory];
     updated.splice(index, 1);
     setProfile({ ...profile, workHistory: updated });
+  };
+
+  const handleSaveProfile = () => {
+    addToast('Profile details saved successfully!', 'success');
   };
 
   const renderDashboard = () => (
@@ -279,7 +286,10 @@ export const CandidatePortal: React.FC<{ user: User }> = ({ user }) => {
                {isParsing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
                {isParsing ? 'Parsing...' : 'Upload Resume & Auto-fill'}
             </button>
-            <button className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 shadow-sm">
+            <button 
+              onClick={handleSaveProfile}
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 shadow-sm"
+            >
                <Save size={18} /> Save Profile
             </button>
           </div>

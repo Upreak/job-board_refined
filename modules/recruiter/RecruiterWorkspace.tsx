@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { JobPost, Candidate, ActionCard, ChatMessage, WorkExperience } from '../../types';
 import { 
@@ -10,6 +9,7 @@ import {
   FileText, Eye, File, Trash2, Edit, CheckSquare,
   PauseCircle, MessageCircle, Sparkles, Upload, Image
 } from 'lucide-react';
+import { useToast } from '../ui/ToastContext';
 
 // --- MOCK DATA ---
 
@@ -214,6 +214,7 @@ export const RecruiterWorkspace: React.FC = () => {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null); // For Profile View
   const [coPilotCandidate, setCoPilotCandidate] = useState<Candidate | null>(null); // For Chat Modal
   const [showManualSearch, setShowManualSearch] = useState(false);
+  const { addToast } = useToast();
 
   // Job Status Management State (List View)
   const [jobs, setJobs] = useState<JobPost[]>(MOCK_JOBS);
@@ -221,15 +222,13 @@ export const RecruiterWorkspace: React.FC = () => {
   const selectedJob = useMemo(() => jobs.find(j => j.id === selectedJobId), [jobs, selectedJobId]);
 
   const handleJobStatusUpdate = (jobId: string, newStatus: any, remarks: string) => {
-    if (window.confirm("Are you sure you want to update the job status?")) {
-      setJobs(jobs.map(j => j.id === jobId ? { ...j, status: newStatus, statusRemarks: remarks } : j));
-      // Show toast success (mock)
-      alert("Job status updated successfully!");
-    }
+    setJobs(jobs.map(j => j.id === jobId ? { ...j, status: newStatus, statusRemarks: remarks } : j));
+    addToast('Job status updated successfully!', 'success');
   };
 
   const handleActionDismiss = (id: string) => {
     setActionQueue(actionQueue.filter(a => a.id !== id));
+    addToast('Action dismissed', 'info');
   };
 
   // --- Sub-Components ---
@@ -332,10 +331,8 @@ export const RecruiterWorkspace: React.FC = () => {
     };
 
     const handleFollowUpUpdate = () => {
-        if(window.confirm("Confirm follow-up status update?")) {
-            // Mock API Call
-            alert("Success: Candidate follow-up updated.");
-        }
+        // Mock API Call
+        addToast("Candidate follow-up updated", 'success');
     };
 
     return (
@@ -1244,7 +1241,7 @@ export const RecruiterWorkspace: React.FC = () => {
                    Save as Draft
                 </button>
                 <button 
-                  onClick={() => { setSelectedCandidate(null); alert('Profile Verified & Saved!'); }}
+                  onClick={() => { setSelectedCandidate(null); addToast('Profile Verified & Saved!', 'success'); }}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 flex items-center gap-2 shadow-sm"
                 >
                    <CheckSquare size={16} /> Verify & Save Profile

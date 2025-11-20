@@ -1,11 +1,264 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Upload, CheckCircle, X, LogIn, Globe, Zap, ExternalLink, Loader2, FileText } from 'lucide-react';
+import { Search, MapPin, Briefcase, LogIn, Zap, ExternalLink, Loader2, FileText, DollarSign, ChevronRight, X, UploadCloud, CheckCircle, Clock, List } from 'lucide-react';
 import { PublicJob, PublicJobService } from '../../services/publicJobService';
+import { useToast } from '../ui/ToastContext';
 
 interface PublicJobBoardProps {
   onSignInClick: () => void;
   onViewArchitecture: () => void;
 }
+
+// Mock Data for Internal "Featured" Jobs
+const FEATURED_JOBS = [
+  {
+    id: 'feat-1',
+    title: 'Senior Product Designer',
+    company: 'Creative Studio',
+    location: 'Remote',
+    type: 'Full-time',
+    salary: '₹25L - ₹35L',
+    tags: ['Figma', 'UI/UX'],
+    posted: '2 days ago',
+    description: 'We are seeking a visionary Senior Product Designer to lead our core product experience. You will work closely with engineering and product teams to deliver intuitive, user-centric designs.',
+    requirements: ['5+ years of experience in Product Design', 'Expertise in Figma and prototyping tools', 'Strong portfolio showcasing complex web apps', 'Experience with design systems']
+  },
+  {
+    id: 'feat-2',
+    title: 'Backend Tech Lead',
+    company: 'FinTech Global',
+    location: 'Bangalore',
+    type: 'Full-time',
+    salary: '₹45L - ₹60L',
+    tags: ['Node.js', 'AWS'],
+    posted: '1 day ago',
+    description: 'Join a high-growth FinTech startup as a Backend Tech Lead. You will be responsible for architecting scalable microservices and leading a team of 5 engineers.',
+    requirements: ['8+ years of backend development experience', 'Strong proficiency in Node.js and TypeScript', 'Deep understanding of AWS services (Lambda, DynamoDB)', 'Experience in leading agile teams']
+  },
+  {
+    id: 'feat-3',
+    title: 'Marketing Manager',
+    company: 'GrowthX',
+    location: 'Mumbai (Hybrid)',
+    type: 'Full-time',
+    salary: '₹18L - ₹25L',
+    tags: ['Marketing', 'B2B'],
+    posted: '3 days ago',
+    description: 'We are looking for a data-driven Marketing Manager to drive B2B lead generation strategies. You will oversee content marketing, paid campaigns, and event marketing.',
+    requirements: ['4+ years in B2B Marketing', 'Proven track record in lead generation', 'Experience with HubSpot or Salesforce', 'Strong analytical and communication skills']
+  }
+];
+
+interface ApplicationModalProps {
+  job: typeof FEATURED_JOBS[0];
+  onClose: () => void;
+}
+
+const ApplicationModal: React.FC<ApplicationModalProps> = ({ job, onClose }) => {
+  const [step, setStep] = useState<'FORM' | 'SUCCESS'>('FORM');
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    resume: null as File | null
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addToast } = useToast();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setStep('SUCCESS');
+      addToast('Application submitted successfully!', 'success');
+    }, 1500);
+  };
+
+  if (step === 'SUCCESS') {
+    return (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 text-center">
+           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+             <CheckCircle size={32} />
+           </div>
+           <h3 className="text-2xl font-bold text-slate-900 mb-2">Application Sent!</h3>
+           <p className="text-slate-500 mb-6">
+             Thanks for applying to <span className="font-bold text-slate-800">{job.company}</span>. We have received your resume and will get back to you shortly.
+           </p>
+           <button 
+             onClick={onClose}
+             className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-colors"
+           >
+             Close
+           </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-5 border-b flex justify-between items-center bg-slate-50">
+           <div>
+             <h3 className="font-bold text-lg text-slate-900">Apply for {job.title}</h3>
+             <p className="text-sm text-slate-500">{job.company} • {job.location}</p>
+           </div>
+           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+             <X size={20} />
+           </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+           <input type="hidden" name="jobId" value={job.id} />
+           
+           <div>
+             <label className="block text-sm font-bold text-slate-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+             <input 
+               required
+               value={formData.fullName}
+               onChange={e => setFormData({...formData, fullName: e.target.value})}
+               className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+               placeholder="e.g. John Doe"
+             />
+           </div>
+
+           <div className="grid grid-cols-2 gap-4">
+             <div>
+               <label className="block text-sm font-bold text-slate-700 mb-1">Email <span className="text-red-500">*</span></label>
+               <input 
+                 type="email"
+                 required
+                 value={formData.email}
+                 onChange={e => setFormData({...formData, email: e.target.value})}
+                 className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                 placeholder="john@example.com"
+               />
+             </div>
+             <div>
+               <label className="block text-sm font-bold text-slate-700 mb-1">Phone <span className="text-red-500">*</span></label>
+               <input 
+                 type="tel"
+                 required
+                 value={formData.phone}
+                 onChange={e => setFormData({...formData, phone: e.target.value})}
+                 className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                 placeholder="+91 98765 43210"
+               />
+             </div>
+           </div>
+
+           <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Resume / CV <span className="text-red-500">*</span></label>
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:bg-slate-50 hover:border-blue-400 transition-colors cursor-pointer relative">
+                 <input 
+                    type="file" 
+                    accept=".pdf,.docx,.doc"
+                    required
+                    onChange={e => setFormData({...formData, resume: e.target.files?.[0] || null})}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                 />
+                 <div className="flex flex-col items-center gap-2 text-slate-500">
+                    <UploadCloud size={32} className="text-blue-500" />
+                    {formData.resume ? (
+                      <span className="font-bold text-blue-600">{formData.resume.name}</span>
+                    ) : (
+                      <>
+                        <span className="font-medium text-slate-700">Click to upload or drag and drop</span>
+                        <span className="text-xs">PDF, DOCX up to 5MB</span>
+                      </>
+                    )}
+                 </div>
+              </div>
+           </div>
+
+           <div className="pt-4">
+             <button 
+               type="submit" 
+               disabled={isSubmitting}
+               className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
+             >
+               {isSubmitting ? <Loader2 className="animate-spin" /> : 'Submit Application'}
+             </button>
+           </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+interface JobDetailsModalProps {
+  job: typeof FEATURED_JOBS[0];
+  onClose: () => void;
+  onApply: () => void;
+}
+
+const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, onApply }) => {
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-6 border-b flex justify-between items-start bg-slate-50 sticky top-0 z-10">
+          <div>
+             <h2 className="text-2xl font-bold text-slate-900">{job.title}</h2>
+             <p className="text-slate-500 font-medium mt-1">{job.company}</p>
+             <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
+                <div className="flex items-center gap-1"><MapPin size={14}/> {job.location}</div>
+                <div className="flex items-center gap-1"><DollarSign size={14}/> {job.salary}</div>
+                <div className="flex items-center gap-1"><Clock size={14}/> {job.type}</div>
+             </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+        
+        <div className="p-8 overflow-y-auto space-y-8">
+           <div>
+              <h3 className="text-lg font-bold text-slate-800 mb-3">About the Role</h3>
+              <p className="text-slate-600 leading-relaxed">{job.description}</p>
+           </div>
+           
+           <div>
+              <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <List size={18} className="text-blue-600" /> Requirements
+              </h3>
+              <ul className="space-y-2">
+                 {job.requirements.map((req, i) => (
+                    <li key={i} className="flex items-start gap-2 text-slate-600">
+                       <span className="mt-2 w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0"></span>
+                       <span>{req}</span>
+                    </li>
+                 ))}
+              </ul>
+           </div>
+           
+           <div>
+              <h3 className="text-lg font-bold text-slate-800 mb-3">Tech Stack & Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                 {job.tags.map(tag => (
+                    <span key={tag} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">{tag}</span>
+                 ))}
+              </div>
+           </div>
+        </div>
+
+        <div className="p-6 border-t bg-slate-50 flex justify-end gap-4">
+           <button onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors">
+             Cancel
+           </button>
+           <button 
+             onClick={onApply}
+             className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+           >
+             Apply Now <ChevronRight size={18} />
+           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, onViewArchitecture }) => {
   const [search, setSearch] = useState('');
@@ -13,6 +266,9 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
   const [jobs, setJobs] = useState<PublicJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  
+  const [viewingJob, setViewingJob] = useState<typeof FEATURED_JOBS[0] | null>(null);
+  const [applyingJob, setApplyingJob] = useState<typeof FEATURED_JOBS[0] | null>(null);
 
   // Initial Load - Fetch Daily Hot Drops
   useEffect(() => {
@@ -38,19 +294,13 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
+      <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">S</div>
             <span className="text-xl font-bold text-slate-900">sree.ai</span>
           </div>
           <div className="flex items-center gap-6">
-            <button 
-              onClick={onViewArchitecture}
-              className="text-sm font-bold text-slate-500 hover:text-blue-600 flex items-center gap-2"
-            >
-              <FileText size={16} /> System Architecture
-            </button>
             <button 
               onClick={onSignInClick}
               className="px-5 py-2 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-sm flex items-center gap-2"
@@ -109,7 +359,67 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500 rounded-full opacity-20 translate-x-1/3 translate-y-1/3 blur-3xl"></div>
       </div>
 
-      {/* Job Listings */}
+      {/* Featured Opportunities (Internal Jobs) - Only show when not searching */}
+      {!search && !isSearching && (
+        <div className="max-w-7xl mx-auto px-4 py-12 border-b border-slate-200 w-full">
+          <div className="flex items-center gap-3 mb-8">
+             <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-md">
+                <Briefcase size={24} />
+             </div>
+             <div>
+               <h2 className="text-2xl font-bold text-slate-900">Featured Opportunities</h2>
+               <p className="text-slate-500 text-sm">Curated roles directly from our partner employers.</p>
+             </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             {FEATURED_JOBS.map((job) => (
+                <div 
+                  key={job.id} 
+                  onClick={() => setViewingJob(job)}
+                  className="bg-white rounded-xl border border-slate-200 p-6 hover:border-blue-400 hover:shadow-lg transition-all group flex flex-col cursor-pointer relative overflow-hidden"
+                >
+                   <div className="flex justify-between items-start mb-4">
+                      <div>
+                         <h3 className="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors">{job.title}</h3>
+                         <p className="text-slate-500 font-medium">{job.company}</p>
+                      </div>
+                      <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Featured</span>
+                   </div>
+                   
+                   <div className="space-y-3 mb-6 flex-1">
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                         <MapPin size={14} className="text-slate-400"/> {job.location}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                         <DollarSign size={14} className="text-slate-400"/> {job.salary}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                         {job.tags.map(tag => (
+                           <span key={tag} className="text-xs bg-slate-50 border border-slate-100 text-slate-600 px-2 py-1 rounded font-medium">{tag}</span>
+                         ))}
+                      </div>
+                   </div>
+                   
+                   <div className="pt-4 border-t flex items-center justify-between">
+                      <span className="text-xs text-slate-400 font-medium">{job.posted}</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setApplyingJob(job); }}
+                        className="text-white bg-blue-600 px-4 py-1.5 rounded-lg font-bold text-sm hover:bg-blue-700 flex items-center gap-1 transition-colors shadow-sm z-10"
+                      >
+                          Apply Now <ChevronRight size={14} />
+                      </button>
+                   </div>
+                   
+                   {/* Hover Effect Overlay */}
+                   <div className="absolute inset-0 bg-blue-50/0 group-hover:bg-blue-50/30 transition-colors pointer-events-none"></div>
+                </div>
+             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Job Listings / Hot Drops */}
       <div className="max-w-7xl mx-auto px-4 py-12 flex-1 w-full">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -181,9 +491,27 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
       <footer className="bg-slate-900 text-slate-400 py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p>&copy; 2023 sree.ai Recruitment Platform. All rights reserved.</p>
-          <button onClick={onViewArchitecture} className="text-xs mt-2 hover:text-white underline">View System Architecture</button>
+          <button onClick={onViewArchitecture} className="text-xs mt-2 hover:text-white underline flex items-center justify-center gap-2 mx-auto">
+            <FileText size={12} /> View System Architecture
+          </button>
         </div>
       </footer>
+
+      {/* Modals */}
+      {viewingJob && (
+        <JobDetailsModal 
+          job={viewingJob} 
+          onClose={() => setViewingJob(null)} 
+          onApply={() => { setViewingJob(null); setApplyingJob(viewingJob); }}
+        />
+      )}
+
+      {applyingJob && (
+        <ApplicationModal 
+          job={applyingJob} 
+          onClose={() => setApplyingJob(null)} 
+        />
+      )}
     </div>
   );
 };
