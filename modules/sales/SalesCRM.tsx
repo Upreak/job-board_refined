@@ -191,7 +191,7 @@ export const SalesCRM: React.FC = () => {
 
   // --- Sub-Components ---
 
-  const LeadCard = ({ lead }: { lead: Lead }) => (
+  const LeadCard: React.FC<{ lead: Lead }> = ({ lead }) => (
     <div 
       onClick={() => setSelectedLeadId(lead.id)}
       className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-400 transition-all cursor-pointer mb-3 group flex flex-col"
@@ -442,9 +442,6 @@ export const SalesCRM: React.FC = () => {
     );
   };
 
-  // (renderClientForm and renderClientList logic similar to previous but using clients from state/storage)
-  // ... For brevity, I am keeping structure identical but omitted repeating big chunks unless modified logic.
-  
   const renderClientForm = () => (
       <div className="h-full overflow-y-auto pb-10 bg-slate-50">
       <div className="bg-white rounded-xl shadow-sm border p-8 max-w-4xl mx-auto mt-6 animate-in slide-in-from-bottom-4">

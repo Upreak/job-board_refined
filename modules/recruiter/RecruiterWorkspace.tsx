@@ -175,7 +175,7 @@ export const RecruiterWorkspace: React.FC = () => {
     );
   };
 
-  const ActionQueueCard = ({ action }: { action: ActionCard }) => (
+  const ActionQueueCard: React.FC<{ action: ActionCard }> = ({ action }) => (
     <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-all mb-3 relative group animate-in slide-in-from-left-2">
       <div className="flex justify-between items-start">
         <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
@@ -197,7 +197,7 @@ export const RecruiterWorkspace: React.FC = () => {
     </div>
   );
 
-  const JobCard = ({ job }: { job: JobPost }) => {
+  const JobCard: React.FC<{ job: JobPost }> = ({ job }) => {
     const [localStatus, setLocalStatus] = useState(job.status);
     const [localRemarks, setLocalRemarks] = useState(job.statusRemarks || '');
     
@@ -262,7 +262,7 @@ export const RecruiterWorkspace: React.FC = () => {
     );
   };
 
-  const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
+  const CandidateCard: React.FC<{ candidate: Candidate }> = ({ candidate }) => {
     const [followUpStatus, setFollowUpStatus] = useState(candidate.followUpStatus || '');
     const [nextDate, setNextDate] = useState(candidate.nextFollowUpDate || '');
     const [remarks, setRemarks] = useState(candidate.followUpRemarks || '');
