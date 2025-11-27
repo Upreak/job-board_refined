@@ -7,3 +7,9 @@ celery[testing]
 redis
 PyYAML
 google-generativeai
+requests
+jinja2
+sqlalchemy
+celery
+python-dotenv
+openai

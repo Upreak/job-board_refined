@@ -19,6 +19,8 @@ from .providers.config_manager import ProviderConfigManager
 from .prompts.resume_prompt import ResumePromptRenderer
 from .prompts.jd_prompt import JDPromptRenderer
 
+def parse_resume(resume_text):
+    return {"status": "parsed"}
 
 @dataclass
 class BrainResult:
