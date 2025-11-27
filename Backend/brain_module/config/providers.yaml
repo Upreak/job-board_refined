@@ -105,14 +105,6 @@ brain_core:
     - "summarization"
     - "analysis"
   
-  # Prompt templates for different task types
-  prompt_templates:
-    chat: "Please respond to the following message:\n\n{input}"
-    resume_parsing: "Please analyze the following resume and extract key information:\n\n{input}\n\nPlease provide a structured analysis including personal information, work experience, education, and skills."
-    jd_parsing: "Please analyze the following job description and extract key information:\n\n{input}\n\nPlease provide a structured analysis including job title, responsibilities, requirements, and qualifications."
-    generic_instructions: "Please follow these instructions:\n\n{input}"
-    summarization: "Please provide a concise summary of the following text:\n\n{input}"
-    analysis: "Please analyze the following text:\n\n{input}"
 
 # Model configurations
 models:
