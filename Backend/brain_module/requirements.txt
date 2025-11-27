@@ -1,0 +1,50 @@
+# Core Dependencies
+aiofiles
+PyYAML
+httpx
+
+# Unstructured IO (from existing implementation)
+unstructured[local-inference]==0.10.27
+# ^ Core library for document parsing with local inference support
+# ^ Includes support for PDF, DOCX, and various other document formats
+# ^ Required for: document partitioning, element extraction, layout preservation
+# ^ Using stable version to avoid import compatibility issues
+
+# HTTP requests for Unstructured API mode
+requests>=2.28.0,<3.0.0
+# ^ Required for: calling Unstructured hosted API
+# ^ Used in: call_unstructured_api() function
+# ^ Dependencies: urllib3, charset-normalizer, idna, certifi
+
+# LLM Provider Libraries
+fastapi
+uvicorn
+
+# Enhanced Key Manager + Model Fallback System
+# Additional dependencies for advanced features
+python-dotenv>=1.0.0
+# ^ For environment variable management
+schedule>=1.2.0
+# ^ For scheduled health checks and cleanup
+psutil>=5.9.0
+# ^ For system monitoring and resource tracking
+prometheus-client>=0.17.0
+# ^ For metrics collection and monitoring
+tenacity>=8.2.0
+# ^ For retry mechanisms and resilience
+
+# Optional LLM Provider Libraries
+# Install these only if you plan to use the respective providers
+google-generativeai  # For Gemini provider
+groq                 # For Groq provider
+
+
+# Development and Testing
+pytest
+pytest-cov
+black
+flake8
+pytest-asyncio
+# ^ For async testing
+pytest-mock
+# ^ For mocking in tests
