@@ -1,0 +1,183 @@
+# prompts/templates.yaml
+
+###################################################################
+# Base Template (Strict JSON Output)
+###################################################################
+default_json_parser:
+  system: |
+    You MUST output a JSON object only. No explanation or additional text.
+    Do NOT infer or guess missing fields.
+    Return only fields explicitly mentioned in the input text.
+    Leave missing fields empty.
+  user: ""
+
+
+###################################################################
+# JD Parsing Template
+###################################################################
+jd_parse:
+  base: default_json_parser
+
+  system: |
+    Task:
+    Extract all information explicitly mentioned in the job description (structured/unstructured text) and structure it according to the Job Details schema below. Do NOT infer or generate missing information. If a field is not present, leave it blank.
+
+    General Rules:
+    - Use only the text provided in the JD.
+    - Maintain exact wording for responsibilities, skills, and descriptions.
+    - For lists (skills, locations, perks, responsibilities), return as arrays.
+    - Preserve original wording, punctuation, and formatting.
+    - Output strictly in JSON.
+
+    Fields to Extract (Output):
+
+    Basic Job Details:
+      client:
+      job_title:
+      job_id:
+      employment_type:
+      work_mode:
+      industry:
+      functional_area:
+
+    Location & Compensation:
+      job_locations: []
+      minimum_salary:
+      maximum_salary:
+      currency:
+      salary_unit:
+      benefits_perks: []
+
+    Job Description:
+      about_company:
+      job_summary:
+      responsibilities_key_duties: []
+      experience_required:
+      education_qualification:
+      required_skills: []
+      preferred_skills: []
+      tools_tech_stack: []
+
+    Application Details:
+      number_of_openings:
+      application_deadline:
+      hiring_process_rounds: []
+
+    Compliance / Misc:
+      notice_period_accepted:
+
+    SEO & Metadata:
+      slug_url:
+      meta_title:
+      meta_description:
+
+    Processing Guidelines:
+    - Do not assume seniority or role level unless explicitly stated.
+    - Capture responsibilities exactly as listed—one item per bullet/line.
+    - Required, preferred, and tools/tech stack must match the JD text exactly.
+    - For dates, keep the original format from the JD.
+    - For salary fields, extract values exactly as written.
+    - Leave blank fields as empty strings or empty arrays.
+    - Return ONLY the final JSON.
+
+  user: |
+    Extract the job description details from the following text:
+    {{ jd_text }}
+
+
+###################################################################
+# Resume Parsing Template
+###################################################################
+resume_parse:
+  base: default_json_parser
+
+  system: |
+    Task:
+    Extract all information explicitly mentioned in the resume (structured/unstructured text) and structure it according to the Candidate Portfolio format. Do NOT infer, guess, or generate missing details. If a field is not present, leave it blank.
+
+    General Rules:
+    - Use only the content found in the resume.
+    - Maintain exact wording for skills, certificates, responsibilities, tools, etc.
+    - Dates must follow DD/MMM/YYYY format when possible.
+    - For multiple values, return them as arrays.
+    - Output strictly in JSON.
+
+    Fields to Extract (Output):
+
+    Identity Basics:
+      Full Name:
+      Email Address:
+      Mobile Number:
+      Professional Summary:
+      LinkedIn URL:
+      Portfolio URL:
+
+    Education & Skills:
+      Highest Education (PhD/Doctorate):
+      Second Highest Education (Masters):
+      Third Highest Education (Bachelor):
+      DIPLOMA:
+      ITI:
+      PUC:
+      SSLC:
+      Certificates:
+      Skills:
+      Field of Study:
+      Projects / Profile:
+      GitHub / Behance / Kaggle URL:
+
+    Job Preferences:
+      Total Experience (Years):
+      Current Role:
+      Expected Role:
+      Job Type:
+      Current Locations:
+      Ready to Relocate:
+      Notice Period:
+      Work Authorization / Visa:
+
+    Salary Info:
+      Current CTC (LPA):
+      Expected CTC (LPA):
+
+    Broader Preferences & Personal Details:
+      Preferred Industries:
+      Gender:
+      Marital Status:
+      Date of Birth:
+      Languages Known:
+
+    Work History:
+      Each job contains:
+        Job Title/Role:
+        Company Name:
+        Start Date:
+        End Date:
+        Key Responsibilities:
+        Tools Used:
+
+    Processing Guidelines:
+    - Include degree, institution, year, and score if available.
+    - List certificates individually.
+    - Extract every skill exactly as written.
+    - Create separate entries for each job in work history.
+    - Keep responsibilities true to the resume text.
+    - Leave blank fields empty.
+    - Do NOT assume or interpret any information not stated.
+
+    Output:
+    Return ONLY the final JSON.
+
+  user: |
+    Extract all resume fields from the following text:
+    {{ resume_text }}
+
+
+###################################################################
+# Chat Template (for general use)
+###################################################################
+chat:
+  system: |
+    You are a helpful assistant. Keep answers clear and friendly.
+  user: |
+    {{ user_message }}
