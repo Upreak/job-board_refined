@@ -20,7 +20,7 @@ export const PublicJobService = {
   // 1. DAILY AUTOMATED JOB FETCHER
   getDailyHotDrops: async (): Promise<PublicJob[]> => {
     const today = new Date().toISOString().split('T')[0];
-    const storedData = localStorage.getItem(STORAGE_KEY);
+    const storedData = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
     
     if (storedData) {
       const parsed = JSON.parse(storedData);
@@ -52,10 +52,12 @@ export const PublicJobService = {
       }));
 
       // Store in Local Storage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        date: today,
-        jobs: processedJobs
-      }));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          date: today,
+          jobs: processedJobs
+        }));
+      }
 
       return processedJobs;
     } catch (e) {
@@ -68,7 +70,7 @@ export const PublicJobService = {
   // 2. REAL-TIME JOB SEARCH
   searchJobs: async (query: string): Promise<PublicJob[]> => {
     // Step 1: Local Search (Hot Drops)
-    const storedData = localStorage.getItem(STORAGE_KEY);
+    const storedData = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
     let localResults: PublicJob[] = [];
     if (storedData) {
       const parsed = JSON.parse(storedData);
