@@ -1,42 +1,33 @@
-# API Endpoint Specification
+# API Endpoints
 
-## 1. Sales Module (CRM)
-Base URL: `/api/v1/sales`
+This document details the API endpoints for the backend.
 
-| Method | Endpoint | Description | Payload |
-|:---|:---|:---|:---|
-| GET | `/leads` | Fetch all leads | Query: `?status=New&owner=me` |
-| POST | `/leads` | Create new lead | `{ companyName, contactPerson, value, ... }` |
-| PATCH | `/leads/:id/status` | Move pipeline stage | `{ status: "Qualified" }` |
-| POST | `/leads/:id/activity` | Log interaction | `{ type: "Call", description: "..." }` |
-| POST | `/clients/convert` | Lead -> Client | `{ leadId: "...", assignedRecruiter: "..." }` |
+## Orchestrator API
 
-## 2. Recruiter Module (ATS)
-Base URL: `/api/v1/ats`
+### `POST /tasks`
 
-| Method | Endpoint | Description | Payload |
-|:---|:---|:---|:---|
-| GET | `/jobs` | List jobs | Query: `?status=Sourcing` |
-| POST | `/jobs` | Post new job | `{ title, skills, salary... }` |
-| GET | `/jobs/:id/candidates` | Get applicants | - |
-| POST | `/candidates/parse` | Upload & Parse Resume | `FormData: { file: binary }` |
-| PUT | `/candidates/:id` | Update status | `{ status: "Interview", remarks: "..." }` |
-| POST | `/candidates/manual-search` | Search DB | `{ query: "React Dev" }` |
+Creates a new task.
 
-## 3. Candidate Portal
-Base URL: `/api/v1/portal`
+*   **Request Body:**
+    *   `task_type` (string): The type of task to create (e.g., "resume_parsing", "chat").
+    *   `payload` (object): The data required for the task.
+*   **Response:**
+    *   `qid` (string): A unique identifier for the task.
 
-| Method | Endpoint | Description | Payload |
-|:---|:---|:---|:---|
-| GET | `/jobs/public` | Public Job Board | Query: `?location=Bangalore` |
-| POST | `/applications` | Submit Application | `{ jobId, candidateProfile }` |
-| POST | `/profile/resume` | Parse Resume (Self) | `FormData: { file: binary }` |
+### `GET /tasks/{qid}`
 
-## 4. Analytics (Dashboard)
-Base URL: `/api/v1/analytics`
+Retrieves the status and result of a task.
 
-| Method | Endpoint | Description | Payload |
-|:---|:---|:---|:---|
-| GET | `/kpi/sales` | Sales Metrics | - |
-| GET | `/kpi/recruitment` | Hiring Metrics | - |
-| GET | `/feed` | Global Activity Feed | - |
+*   **URL Parameters:**
+    *   `qid` (string): The unique identifier of the task.
+*   **Response:**
+    *   `qid` (string): The unique identifier of the task.
+    *   `status` (string): The current status of the task (e.g., "queued", "in_progress", "completed", "failed").
+    *   `result` (object): The result of the task, if completed.
+
+### `GET /health`
+
+Checks the health of the Orchestrator.
+
+*   **Response:**
+    *   `status` (string): "ok" if the service is healthy.
