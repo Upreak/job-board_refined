@@ -1,0 +1,161 @@
+# Brain Module Provider Configuration
+# This file defines the LLM providers and their settings
+
+# Global logging configuration
+logging:
+  level: INFO
+  format: "%(asctime)s [%(levelname)s] %(message)s"
+  file: "provider_manager.log"
+
+# Provider configurations
+providers:
+  # OpenRouter Provider (Primary)
+  - name: openrouter_primary
+    adapter: providers.openrouter_provider.OpenRouterProvider
+    api_key_env: "OPENROUTER_API_KEY"
+    api_url: "https://openrouter.ai/api/v1"
+    model: "x-ai/grok-4.1-fast:free"
+    daily_limit: 500
+    enabled: true
+    timeout: 30
+    max_retries: 3
+    temperature: 0.7
+    max_tokens: 4096
+    top_p: 1.0
+    frequency_penalty: 0
+    presence_penalty: 0
+
+  # Gemini Provider (Backup)
+  - name: gemini_backup
+    adapter: providers.gemini_provider.GeminiProvider
+    api_key_env: "GEMINI_API_KEY"
+    model: "gemini-2.5-flash"
+    daily_limit: 200
+    enabled: true
+    timeout: 30
+    max_retries: 3
+    temperature: 0.7
+    max_tokens: 4096
+    top_p: 1.0
+    top_k: 40
+    candidate_count: 1
+    safety_settings:
+      category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+      category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+      category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+      category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+
+  # Groq Provider (Backup)
+  - name: groq_backup
+    adapter: providers.groq_provider.GroqProvider
+    api_key_env: "GROQ_API_KEY"
+    model: "llama-3.1-8b-instant"
+    daily_limit: 300
+    enabled: true
+    timeout: 30
+    max_retries: 3
+    temperature: 0.7
+    max_tokens: 4096
+    top_p: 1.0
+    frequency_penalty: 0
+    presence_penalty: 0
+    stream: false
+
+# Text extraction configuration
+text_extraction:
+  mode: "local"  # "local" or "api"
+  strategy: "fast"  # "fast", "ocr_only", "hi_res"
+  preserve_layout:
+    headers: true
+    lists: true
+    tables: true
+  output:
+    include_element_types: false
+    join_with_blank_lines: true
+
+# API configuration for text extraction (if using API mode)
+text_extraction_api:
+  url: "https://api.unstructured.io/general/v0/general"
+  api_key_env: "UNSTRUCTURED_API_KEY"
+  timeout: 300
+  max_retries: 3
+
+# Output configuration
+output:
+  directory: "brp"
+  temp_directory: "tmp"
+  format: "json"
+  include_metadata: true
+  cleanup_temp_files: true
+  temp_file_age_hours: 24
+
+# Brain Core configuration
+brain_core:
+  version: "1.0.0"
+  default_task_type: "chat"
+  supported_task_types:
+    - "chat"
+    - "resume_parsing"
+    - "jd_parsing"
+    - "generic_instructions"
+    - "summarization"
+    - "analysis"
+  
+  # Prompt templates for different task types
+  prompt_templates:
+    chat: "Please respond to the following message:\n\n{input}"
+    resume_parsing: "Please analyze the following resume and extract key information:\n\n{input}\n\nPlease provide a structured analysis including personal information, work experience, education, and skills."
+    jd_parsing: "Please analyze the following job description and extract key information:\n\n{input}\n\nPlease provide a structured analysis including job title, responsibilities, requirements, and qualifications."
+    generic_instructions: "Please follow these instructions:\n\n{input}"
+    summarization: "Please provide a concise summary of the following text:\n\n{input}"
+    analysis: "Please analyze the following text:\n\n{input}"
+
+# Model configurations
+models:
+  # OpenRouter Models
+  - provider: openrouter_primary
+    name: "x-ai/grok-4.1-fast:free"
+    status: "active"
+    daily_limit: 500
+    max_tokens: 4096
+    cost_per_1k_tokens: 0.0
+    supports_streaming: false
+    supports_json: true
+    supports_vision: false
+    priority: 1
+
+  # Gemini Models
+  - provider: gemini_backup
+    name: "gemini-1.5-flash"
+    status: "active"
+    daily_limit: 200
+    max_tokens: 4096
+    cost_per_1k_tokens: 0.0025
+    supports_streaming: false
+    supports_json: true
+    supports_vision: true
+    priority: 2
+
+  # Groq Models
+  - provider: groq_backup
+    name: "llama-3.1-8b-instant"
+    status: "active"
+    daily_limit: 300
+    max_tokens: 4096
+    cost_per_1k_tokens: 0.0
+    supports_streaming: false
+    supports_json: true
+    supports_vision: false
+    priority: 3
+
+# Development and testing configuration
+development:
+  debug: false
+  test_mode: false
+  mock_providers: false
+  verbose_logging: false
+  save_raw_responses: false
