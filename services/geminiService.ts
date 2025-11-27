@@ -1,106 +1,47 @@
-import { GoogleGenAI, Type } from "@google/genai";
+const API_BASE_URL = "http://localhost:8000"; // Assuming the backend runs on port 8000
 
-// Initialize AI - In a real app, API_KEY comes from env. 
-// For this demo, we gracefully handle missing keys by returning mocks.
-const apiKey = process.env.API_KEY || '';
-let ai: GoogleGenAI | null = null;
+const createTask = async (task_type: string, payload: any): Promise<string> => {
+    const response = await fetch(`${API_BASE_URL}/tasks`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ task_type, payload }),
+    });
+    const data = await response.json();
+    return data.qid;
+};
 
-if (apiKey) {
-  ai = new GoogleGenAI({ apiKey });
-}
+const pollTaskResult = async (qid: string): Promise<any> => {
+    let taskComplete = false;
+    let taskResult = null;
 
-// Helper to clean Markdown code blocks from JSON strings
-const cleanJsonString = (text: string): string => {
-  let clean = text;
-  // Remove markdown code blocks (```json ... ``` or just ``` ... ```)
-  clean = clean.replace(/```json\s*([\s\S]*?)\s*```/g, '$1');
-  clean = clean.replace(/```\s*([\s\S]*?)\s*```/g, '$1');
-  return clean.trim();
+    while (!taskComplete) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Poll every 2 seconds
+        const response = await fetch(`${API_BASE_URL}/tasks/${qid}`);
+        const data = await response.json();
+
+        if (data.status === "completed") {
+            taskComplete = true;
+            taskResult = data.result;
+        } else if (data.status === "failed") {
+            taskComplete = true;
+            console.error("Task failed:", data.result);
+            throw new Error("Task failed to process");
+        }
+    }
+    return taskResult;
 };
 
 export const parseResumeAI = async (resumeText: string): Promise<any> => {
-  if (!ai) {
-    console.warn("Gemini API Key not found. Returning mock parse data.");
-    return mockParseResume();
-  }
-
-  try {
-    const model = "gemini-2.5-flash";
-    const prompt = `Extract the following details from the resume text: 
-    Full Name, Email, Phone, Skills (array), Experience (years), Current CTC, Expected CTC.
-    Resume Text: ${resumeText}`;
-
-    // responseMimeType IS supported here because we are NOT using tools.
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            fullName: { type: Type.STRING },
-            email: { type: Type.STRING },
-            phone: { type: Type.STRING },
-            skills: { type: Type.ARRAY, items: { type: Type.STRING } },
-            experience: { type: Type.NUMBER },
-            currentCtc: { type: Type.STRING },
-            expectedCtc: { type: Type.STRING },
-          }
-        }
-      }
-    });
-
-    return JSON.parse(response.text || "{}");
-  } catch (error) {
-    console.error("AI Parse Error:", error);
-    return mockParseResume();
-  }
-};
-
-export const searchJobsWithAI = async (prompt: string): Promise<any[]> => {
-  if (!ai) {
-    console.warn("Gemini API Key not found. Returning empty list.");
-    return [];
-  }
-
-  try {
-    // We use googleSearch tool for grounding to find real jobs.
-    // CRITICAL FIX: Do NOT set responseMimeType: "application/json" when using tools.
-    // It causes INVALID_ARGUMENT errors. We must parse the text manually.
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", 
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        // responseMimeType: "application/json"  <-- REMOVED THIS
-      }
-    });
-
-    const rawText = response.text || "[]";
-    const cleanedJson = cleanJsonString(rawText);
-    
     try {
-      // Attempt to parse the cleaned string
-      const data = JSON.parse(cleanedJson);
-      // Ensure it is an array
-      return Array.isArray(data) ? data : [];
-    } catch (parseError) {
-      console.warn("Failed to parse AI response as JSON. Raw:", rawText);
-      
-      // Fallback regex to extract array if the model chatted before the JSON
-      const arrayMatch = rawText.match(/\[[\s\S]*\]/);
-      if (arrayMatch) {
-        try {
-          return JSON.parse(arrayMatch[0]);
-        } catch (e) { return []; }
-      }
-      return [];
+        const qid = await createTask("resume_parsing", { resume_text: resumeText });
+        const result = await pollTaskResult(qid);
+        return result;
+    } catch (error) {
+        console.error("AI Parse Error:", error);
+        return mockParseResume();
     }
-  } catch (error) {
-    console.error("AI Job Search Error:", error);
-    return [];
-  }
 };
 
 export const generateChatResponse = async (
@@ -108,29 +49,10 @@ export const generateChatResponse = async (
   candidateName: string,
   jobTitle: string
 ): Promise<string> => {
-  if (!ai) {
-     // Mock response if no API key
-     return `(Mock AI): Hi ${candidateName}, thanks for your interest in the ${jobTitle} role. Tell me about your experience.`;
-  }
-
   try {
-    const systemInstruction = `You are a professional AI Recruiter screening ${candidateName} for the position of ${jobTitle}.
-    Be polite, professional, and concise. Ask relevant screening questions based on the context.
-    Do not be repetitive. Keep answers under 50 words.`;
-
-    const conversation = history.map(h => `${h.sender === 'bot' ? 'AI' : 'Candidate'}: ${h.text}`).join('\n');
-    const prompt = `${conversation}\nAI:`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction,
-        maxOutputTokens: 150,
-      }
-    });
-
-    return response.text || "I didn't quite catch that, could you rephrase?";
+    const qid = await createTask("chat", { history, candidateName, jobTitle });
+    const result = await pollTaskResult(qid);
+    return result.message || "I didn't quite catch that, could you rephrase?";
   } catch (error) {
     console.error("Gemini Chat Error:", error);
     return "I'm having trouble connecting right now. Let's continue later.";
@@ -146,3 +68,14 @@ const mockParseResume = () => ({
   currentCtc: "12 LPA",
   expectedCtc: "18 LPA"
 });
+
+export const searchJobsWithAI = async (prompt: string): Promise<any[]> => {
+    try {
+        const qid = await createTask("job_search", { query: prompt });
+        const result = await pollTaskResult(qid);
+        return Array.isArray(result) ? result : [];
+    } catch (error) {
+        console.error("AI Job Search Error:", error);
+        return [];
+    }
+};

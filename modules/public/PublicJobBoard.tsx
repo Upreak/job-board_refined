@@ -291,17 +291,21 @@ export const PublicJobBoard: React.FC<PublicJobBoardProps> = ({ onSignInClick, o
   // Initial Load - Fetch Daily Hot Drops & Featured Internal Jobs
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
-      // 1. Hot Drops (External)
-      const hotDrops = await PublicJobService.getDailyHotDrops();
-      setJobs(hotDrops);
-      
-      // 2. Featured Jobs (Internal - Sourcing/WIP only)
-      const allJobs = StorageService.getJobs();
-      const sourcingJobs = allJobs.filter(j => j.status === 'Sourcing' || j.status === 'WIP');
-      setFeaturedJobs(sourcingJobs);
-      
-      setLoading(false);
+      try {
+        setLoading(true);
+        // 1. Hot Drops (External)
+        const hotDrops = await PublicJobService.getDailyHotDrops();
+        setJobs(hotDrops);
+
+        // 2. Featured Jobs (Internal - Sourcing/WIP only)
+        const allJobs = StorageService.getJobs();
+        const sourcingJobs = allJobs.filter(j => j.status === 'Sourcing' || j.status === 'WIP');
+        setFeaturedJobs(sourcingJobs);
+      } catch (error) {
+        console.error("Error loading data in PublicJobBoard:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     loadData();
   }, []);

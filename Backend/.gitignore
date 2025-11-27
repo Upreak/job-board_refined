@@ -1,0 +1,14 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Celery files
+.celerybeat-schedule
+celerybeat.pid
+
+# Log files
+*.log
+
+# Environment variables
+.env

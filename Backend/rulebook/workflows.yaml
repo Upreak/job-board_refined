@@ -1,0 +1,17 @@
+resume_parsing:
+  on_create:
+    - task: "brain_module.worker.process_task"
+      params:
+        task_type: "parse_resume"
+
+chat:
+  on_create:
+    - task: "brain_module.worker.process_task"
+      params:
+        task_type: "generate_chat_response"
+
+job_search:
+  on_create:
+    - task: "brain_module.worker.process_task"
+      params:
+        task_type: "search_jobs"
